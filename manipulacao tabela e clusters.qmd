@@ -1,0 +1,213 @@
+---
+title: "Atividade03_04"
+author: "Mateus Keiper, luiz eduardo da silva, Joao Paulo dos Santos, Orlando Celso Longo"
+date: "2024-11-12"
+output: html_document
+---
+
+# Atividade em Grupo
+
+### Fase 1: 
+Introdução e Coleta de Dados: Definir o problema de pesquisa, descrever o contexto e coletar os dados que serão analisados.
+
+#### Definição do Tema e Problema de Pesquisa: 
+escolha um tema de interesse (análise dos pacotes do R, temperatura, chuva, vazão, velocidade do vento, etc.).
+
+#### Resposta: 
+
+Categorização dos pacotes de R, e analise de relevância dos download.
+
+#### Redigir uma introdução explicando o problema de pesquisa, seu impacto e relevância para a engenharia.
+
+#### Resposta:
+Existem muitos pacotes do R, somente em nossas pesquisas encontramos mais de 22 mil deles, com a categorização dos mesmos, podemos ajudar os usuarios na escolha estrategica e contextualizada para a seus estudos, trazendo assim uma agilidade no momento da escolha do pacote.
+
+### Coleta de Dados: 
+coletar dados reais ou usar um conjunto de dados (Sugiro utilizar bases de dados públicas para aqueles que ainda não decidiram o tema da proposta: INMET, IBGE, por exemplo.) Outras bases de dados podem ser utilizadas.
+    
+
+####   Descrever a origem dos dados, como foram obtidos, e seu propósito no contexto do problema.
+
+####  Resposta: 
+Coletamos dados do site da CRAN, DATASCIENCE META, e manipulamos os dados no Rstudio, Julius IA e EXCEL.
+
+####  Descrição do Conjunto de Dados: 
+apresentar as variáveis contidas no conjunto de dados, explicando o que cada uma representa. Classifique-as de acordo com os elementos teóricos discutidos nas referências.
+
+####  Resposta: 
+Nome do pacote, dowload, link, ranking e descrição. A partir deste ponto agrupamos os dados nas categorias de maior procura dos usuarios.
+
+###   Fase 2: Análise de Estatísticas Descritivas e Dispersão
+
+####   Pré-processamento de Dados: 
+
+# EM Desenvolvimento:
+
+Para este exercício, como ainda estamos desenvolvendo a metodologia de trabalho, fizemos o webscraping usando Rtudio, manipulação e junção de tabelas no exel e usamos o Julius AI para categorizar os dados.
+
+## Baixando tabelas
+
+```{r}
+
+library(dplyr)
+library(ggplot2)
+library(cranlogs)
+library(rvest)
+library(httr)
+
+# Configurar timeout mais longo
+options(timeout = 300)
+
+# Usar um mirror alternativo
+url <- "https://cloud.r-project.org/web/packages/available_packages_by_date.html"
+
+# Fazer o download com retry
+tryCatch({
+    response <- GET(url, timeout(300))
+    webpage <- read_html(response)
+    table <- html_table(webpage)[[1]]
+    write.csv(table, "cran_packages.csv", row.names = FALSE)
+    print(head(table))
+}, error = function(e) {
+    print(paste("Erro:", e$message))
+  
+})
+```
+
+```{r}
+
+# Create the first table with proper column names
+packages_table <- data.frame(
+  Rank = 1:6,
+  Package = c("ggplot2", "rlang", "magrittr", "dplyr", "vctrs", "cli"),
+  Downloads = c(151745436, 140432406, 129044528, 115193031, 102610169, 100305387)
+)
+
+# Create a sample of the CRAN logs with matching column name
+cran_sample <- data.frame(
+  Package = c("ggplot2", "dplyr", "magrittr"),
+  date = c("2024-01-01", "2024-01-01", "2024-01-01"),
+  daily_downloads = c(1000, 800, 600)
+)
+
+# Merge the datasets
+merged_data <- merge(packages_table, cran_sample, by = "Package", all = TRUE)
+
+# Save and display
+write.csv(merged_data, "merged_packages_data.csv", row.names = FALSE)
+print(head(merged_data))
+
+```
+
+A partir daí, juntamos numa única planilha usando o exel:
+
+```{r}
+
+# Defina o caminho do arquivo 
+file_path <- "C:\\Users\\mateu\\OneDrive\\Desktop\\base de dados.csv"
+# Carregue o arquivo CSV
+dados <- read.csv(file_path, sep=";")
+head(dados)
+
+```
+
+```{python eval=FALSE}
+
+import pandas as pd
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.cluster import KMeans
+
+# Read the Excel file
+df = pd.dados
+
+# Clean the Downloads column by removing commas and converting to numeric
+df['Downloads'] = df['Downloads'].str.replace(',', '').astype(float)
+
+# Create TF-IDF vectors from descriptions
+vectorizer = TfidfVectorizer(stop_words='english')
+tfidf_matrix = vectorizer.fit_transform(df['description'])
+
+# Apply K-means clustering
+n_clusters = 20
+kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+df['Category'] = kmeans.fit_predict(tfidf_matrix)
+
+# Get the most common terms for each cluster
+feature_names = vectorizer.get_feature_names_out()
+cluster_terms = {}
+for i in range(n_clusters):
+    center = kmeans.cluster_centers_[i]
+    top_terms_idx = center.argsort()[-5:][::-1]
+    top_terms = [feature_names[idx] for idx in top_terms_idx]
+    cluster_terms[i] = top_terms
+    print(f"\
+Cluster {i} main themes: {', '.join(top_terms)}")
+    print("Example packages:")
+    print(df[df['Category'] == i][['Package Name', 'description']].head(3))
+
+print("\
+Total packages per cluster:")
+print(df['Category'].value_counts())
+
+```
+
+### Resultado:
+
+Obtivemos os seguintes clusters:
+
+Cluster 0: Foca em previsão e modelos de séries temporais, com pacotes como forecast e fracdiff.
+
+Cluster 1: Enfatiza inferência estatística e testes, apresentando pacotes como multcomp e coin. 
+
+Cluster 2: Centra-se na funcionalidade principal do R e do Tidyverse, com rlang e lifecycle como pacotes-chave. 
+
+Cluster 3: Inclui pacotes de modelagem e métricas, como Formula e ModelMetrics. 
+
+Cluster 4: Especializa-se em manipulação e visualização de dados, com dplyr e ggplot2. 
+
+Cluster 5: Foca em aprendizado de máquina e mineração de dados, apresentando caret e randomForest. 
+
+Cluster 6: Enfatiza bioinformática e genômica, com pacotes como BiocGenerics e GenomicRanges. 
+
+Cluster 7: Centra-se na análise de dados espaciais, apresentando sp e raster. 
+
+Cluster 8: Inclui pacotes para econometria e análise financeira, como zoo e quantmod. 
+
+Cluster 9: Foca em mineração de texto e processamento de linguagem natural, com tm e text2vec. 
+
+Cluster 10: Especializa-se em análise de redes e teoria dos grafos, apresentando igraph e network. 
+
+Cluster 11: Enfatiza estatísticas bayesianas e modelagem, com rstan e brms. 
+
+Cluster 12: Centra-se na análise de séries temporais e previsão, apresentando tseries e forecast. 
+
+Cluster 13: Inclui pacotes para análise de sobrevivência e bioestatística, como survival e survminer. 
+
+Cluster 14: Foca em análise multivariada e redução de dimensionalidade, com FactoMineR e PCAtools. 
+
+Cluster 15: Especializa-se em visualização de dados e gráficos, apresentando ggplot2 e lattice. 
+
+Cluster 16: Enfatiza programação funcional e manipulação de dados, com purrr e magrittr. 
+
+Cluster 17: Centra-se em modelos aditivos generalizados e clustering, apresentando mgcv e mclust. 
+
+Cluster 18: Inclui pacotes para estatísticas multivariadas e distribuições, como mvtnorm e mnormt. 
+
+Cluster 19: Foca em análise de redes e finanças computacionais, com igraph e tseries.
+
+### Gráfico agrupado![Gráfico1](images/grafico1.png)
+
+![gráfico 2](images/grafico4.png)
+
+### Gráfico boxplot
+
+![Gráfico 3](images/grafico2-01.png)
+
+Porém, nesse gráfico tivemos um problema de escada, então se utilizou um gráfico de violino que ajusta a escala:
+
+![Gráfico 4](images/grafico3.png)
+
+### Gráfico histograma
+
+![gráfico 5](images/grafico5.png)

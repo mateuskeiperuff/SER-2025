@@ -1,0 +1,62 @@
+---
+title: "Atividade03_04"
+author: "Luiz Eduardo, Mateus Keiper"
+date: "2024-11-12"
+output: html_document
+---
+
+# Atividade 03_04
+
+## Baixando tabelas
+
+```{r}
+
+library(dplyr)
+library(ggplot2)
+library(cranlogs)
+library(rvest)
+library(httr)
+
+# Configurar timeout mais longo
+options(timeout = 300)
+
+# Usar um mirror alternativo
+url <- "https://cloud.r-project.org/web/packages/available_packages_by_date.html"
+
+# Fazer o download com retry
+tryCatch({
+    response <- GET(url, timeout(300))
+    webpage <- read_html(response)
+    table <- html_table(webpage)[[1]]
+    write.csv(table, "cran_packages.csv", row.names = FALSE)
+    print(head(table))
+}, error = function(e) {
+    print(paste("Erro:", e$message))
+  
+})
+```
+
+```{r}
+
+# Create the first table with proper column names
+packages_table <- data.frame(
+  Rank = 1:6,
+  Package = c("ggplot2", "rlang", "magrittr", "dplyr", "vctrs", "cli"),
+  Downloads = c(151745436, 140432406, 129044528, 115193031, 102610169, 100305387)
+)
+
+# Create a sample of the CRAN logs with matching column name
+cran_sample <- data.frame(
+  Package = c("ggplot2", "dplyr", "magrittr"),
+  date = c("2024-01-01", "2024-01-01", "2024-01-01"),
+  daily_downloads = c(1000, 800, 600)
+)
+
+# Merge the datasets
+merged_data <- merge(packages_table, cran_sample, by = "Package", all = TRUE)
+
+# Save and display
+write.csv(merged_data, "merged_packages_data.csv", row.names = FALSE)
+print(head(merged_data))
+
+```
